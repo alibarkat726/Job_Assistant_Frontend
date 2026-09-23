@@ -4,84 +4,72 @@ Production-grade, scalable Flutter application for the Job Assistant AI platform
 
 ---
 
-## 🎨 Finalized Design System & Theme Architecture
+## 📄 CV Intake Feature Module Architecture
 
-The app uses a strict, unified design token palette, encapsulated typography system, and semantic color extension.
-
-### 1. Design Tokens Table
-
-| Token | Light Mode | Dark Mode | Usage |
-| :--- | :--- | :--- | :--- |
-| **Background / Scaffold** | `#EAF2FB` | `#1C1F26` | App background |
-| **Card / Surface** | `#FFFFFF` | `#20242C` | Cards, containers, modals |
-| **Input Surface** | `#FFFFFF` | `#22262E` | Input field backgrounds |
-| **Default Border** | `#D6E3EF` | `#2E323C` | Card & container borders |
-| **Input Border** | `#C7D8E8` | `#2E323C` | Form field outline borders |
-| **Text Primary** | `#1B2430` | `#FFFFFF` | Main headings & body text |
-| **Text Secondary** | `#5C6B7A` | `#8E94A0` | Captions, hints, subtitles |
-| **Brand Accent (Teal)** | `#14B8A6` | `#14B8A6` | Primary action buttons & active navigation |
-| **Accent Hover / Pressed** | `#0D9488` | `#0D9488` | Pressed states |
-| **On-Accent Text** | `#FFFFFF` | `#0E1116` | Text rendered on primary buttons |
-
----
-
-### 2. 🟢 Semantic Skill-Match Colors (`AppSemanticColors`)
-
-Access semantic states across features (e.g. JD matching, analytics) via `Theme.of(context).extension<AppSemanticColors>()!`:
-
-| State | Light Mode (Bg / Text) | Dark Mode (Bg / Text) | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Matched / Success** | `#E3F7F3` / `#0D9488` | `#0E2E2A` / `#2DD4BF` | Full skill match / positive state |
-| **Partial / Attention** | `#FDEEDA` / `#B4740E` | `#2E2818` / `#F2A93B` | Partial match / warning state |
-| **Missing / Error** | `#FCE8E8` / `#B91C1C` | `#2E1A1A` / `#F87171` | Missing skill / error feedback |
-
-#### Usage Example:
-```dart
-final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
-
-Chip(
-  backgroundColor: semanticColors.matchedBg,
-  label: Text(
-    'Matched Skill',
-    style: TextStyle(color: semanticColors.matchedText),
-  ),
-);
-```
-
----
-
-### 3. ✍️ Typography (`AppTypography`)
-
-- **Headings & Titles**: `Plus Jakarta Sans` (FontWeight 500 for headers, 600 for primary titles & buttons).
-- **Body & UI Text**: `Inter` (FontWeight 400 regular, 500 for emphasis).
-- **Rule**: All text styles are exposed through `Theme.of(context).textTheme`. No `GoogleFonts.xxx()` calls are permitted outside `lib/core/theme/app_typography.dart`.
-
----
-
-### 4. 🔣 Iconography
-
-- All icons use the **Tabler Icon Set** (`flutter_tabler_icons`).
-- Icon colors inherit dynamically from `Theme.of(context)` token properties (`onSurface`, `primary`, or `textTheme.bodyMedium?.color`). No literal hex values are hardcoded in widget trees.
-
----
-
-## 🔒 Auth Feature Module Architecture
+The CV Intake feature (`lib/features/cv/`) manages resume uploading, parsing, reviewing, draft updating, baseline finalizing, canonical viewing, raw binary downloading, and deletion.
 
 ```
-lib/features/auth/
+lib/features/cv/
 ├── data/
-│   ├── models/          # Raw API shapes, Freezed & json_serializable DTOs
-│   ├── services/        # Raw Dio HTTP calls returning DTOs
-│   └── repositories/    # Maps DTOs -> Domain User, exceptions -> Failure objects
+│   ├── models/          # DTOs only — Freezed & json_serializable
+│   │   ├── cv_upload_response_dto.dart
+│   │   ├── cv_detail_dto.dart
+│   │   ├── work_history_dto.dart
+│   │   ├── education_entry_dto.dart
+│   │   ├── cv_skill_dto.dart
+│   │   └── cv_draft_update_request_dto.dart
+│   ├── services/        # Raw Dio HTTP calls (multipart upload, PUT/POST/DELETE, binary stream)
+│   │   └── cv_api_service.dart
+│   └── repositories/    # DTO -> domain mapping, exception -> Failure mapping, key-shape & skill normalization
+│       └── cv_repository_impl.dart
 ├── domain/
-│   ├── entities/        # Pure domain models (User)
+│   ├── entities/        # Domain entities (Cv, WorkHistory, EducationEntry, CvSkill)
+│   │   ├── cv.dart
+│   │   ├── work_history.dart
+│   │   ├── education_entry.dart
+│   │   └── cv_skill.dart
 │   └── repositories/    # Abstract repository contract
+│       └── cv_repository.dart
 └── presentation/
-    ├── controllers/     # Riverpod Notifier managing AuthState
+    ├── controllers/     # Riverpod Notifier managing AsyncValue<Cv?>
+    │   └── cv_controller.dart
     ├── providers/       # Riverpod provider definitions & dependency wiring
-    ├── screens/         # UI screens (Login, Register, Verify Email, Forgot Password)
-    └── widgets/         # Reusable auth components (AuthTextField, PasswordTextField, AuthButton)
+    │   └── cv_providers.dart
+    ├── screens/         # UI screens (CvUploadScreen, CvReviewScreen, CvDetailScreen)
+    │   ├── cv_upload_screen.dart
+    │   ├── cv_review_screen.dart
+    │   └── cv_detail_screen.dart
+    └── widgets/         # Reusable CV components
+        ├── file_picker_button.dart
+        ├── parse_confidence_banner.dart
+        ├── cv_section_card.dart
+        ├── work_history_tile.dart
+        ├── education_tile.dart
+        └── skill_chip.dart
 ```
+
+---
+
+## 🔀 DTO Normalization Strategy
+
+The backend API contract contains two schema inconsistencies between endpoints:
+
+1. **Skills Format Normalization**:
+   - `POST /api/v1/cvs/upload` returns plain string skills under `parsed_data.skills`: `["Python", "FastAPI"]`.
+   - `GET /api/v1/cvs/me` returns object skills: `[{"id": "sk_1", "name": "Python", "category": "Backend"}]`.
+   - **Repository Decision**: `CvRepositoryImpl` maps both string lists and object lists to a single domain `CvSkill` entity (`id`, `name`, `category`). The UI layer consumes `CvSkill` directly without checking source endpoint shapes.
+
+2. **Key Name Normalization**:
+   - `POST /api/v1/cvs/upload` uses singular keys `work_history` and `education` inside `parsed_data`.
+   - `GET /api/v1/cvs/me` uses plural keys `work_histories` and `education_entries`.
+   - **Repository Decision**: `CvRepositoryImpl` maps both key shapes to `List<WorkHistory>` and `List<EducationEntry>` in the domain model.
+
+3. **Authoritative Parse Confidence**:
+   - `parse_confidence` and `parsing_notes` exist at both the top-level response and nested inside `parsed_data` on upload. The top-level fields are selected as authoritative by `CvUploadResponseDto.toDomain()`.
+
+4. **Draft Editability Scope**:
+   - `PUT /api/v1/cvs/draft` payload accepts `{ full_name, summary, work_history }`. Fields supported by this contract (`fullName`, `summary`, `workHistories`) are editable in `CvReviewScreen`.
+   - Fields not documented in the draft endpoint (`email`, `phone`, `location`, `educationEntries`, `skills`) are displayed read-only with explanatory badges to prevent silent drop of user edits.
 
 ---
 
@@ -91,3 +79,6 @@ Run all unit and widget tests with:
 ```bash
 flutter test
 ```
+- **`cv_repository_impl_test.dart`**: Unit tests for string-vs-object skills normalization, key mapping, 404 response handling, and failure mapping.
+- **`cv_controller_test.dart`**: Unit tests for CV state machine (`uploading`, `draft`, `finalized`, `deleted`).
+- **`cv_review_screen_test.dart`**: Widget tests for `ParseConfidenceBanner` rendering and draft submission.

@@ -7,6 +7,9 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/verify_email_screen.dart';
+import '../../features/cv/presentation/screens/cv_detail_screen.dart';
+import '../../features/cv/presentation/screens/cv_review_screen.dart';
+import '../../features/cv/presentation/screens/cv_upload_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -76,6 +79,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         name: 'home',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/cv/upload',
+        name: 'cv-upload',
+        builder: (context, state) => const CvUploadScreen(),
+      ),
+      GoRoute(
+        path: '/cv/review',
+        name: 'cv-review',
+        builder: (context, state) => const CvReviewScreen(),
+      ),
+      GoRoute(
+        path: '/cv/detail',
+        name: 'cv-detail',
+        builder: (context, state) => const CvDetailScreen(),
       ),
     ],
   );

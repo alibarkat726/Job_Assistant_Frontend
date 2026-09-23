@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
+import 'package:go_router/go_router.dart';
 import 'package:job_assistant/core/theme/app_semantic_colors.dart';
 import 'package:job_assistant/core/theme/theme_providers.dart';
 import 'package:job_assistant/features/auth/presentation/controllers/auth_state.dart';
 import 'package:job_assistant/features/auth/presentation/providers/auth_providers.dart';
+import 'package:job_assistant/features/cv/presentation/providers/cv_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -96,6 +98,22 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
               ElevatedButton.icon(
+                onPressed: () {
+                  final cvState = ref.read(cvControllerProvider);
+                  final cv = cvState.value;
+                  if (cv != null && cv.isCanonical) {
+                    context.push('/cv/detail');
+                  } else if (cv != null) {
+                    context.push('/cv/review');
+                  } else {
+                    context.push('/cv/upload');
+                  }
+                },
+                icon: const Icon(TablerIcons.file_text),
+                label: const Text('Manage Baseline CV'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
                 onPressed: () {
                   ref.read(authControllerProvider.notifier).logout();
                 },

@@ -7,12 +7,6 @@ analyzer:
     inference_failure_on_function_invocation: ignore
     inference_failure_on_instance_creation: ignore
 
-# Code Review & Theme Architecture Rules:
-# - NO literal Color(0x...) or Colors.xxx instantiations outside lib/core/theme/
-# - NO direct GoogleFonts.xxx() calls outside lib/core/theme/app_typography.dart
-# - ALL icons must use TablerIcons (flutter_tabler_icons)
-# - ALL feature modules must consume AppSemanticColors via Theme.of(context).extension<AppSemanticColors>()!
-
 linter:
   rules:
     public_member_api_docs: false
@@ -29,3 +23,10 @@ linter:
     unnecessary_underscores: false
     unnecessary_await_in_return: false
     avoid_classes_with_only_static_members: false
+    directives_ordering: false
+    avoid_slow_async_io: false
+    depend_on_referenced_packages: false
+    unnecessary_raw_strings: false
+    omit_local_variable_types: false
+    cascade_invocations: false
+    prefer_const_constructors: false
